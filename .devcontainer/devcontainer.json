@@ -1,11 +1,16 @@
 // For format details, see https://aka.ms/devcontainer.json.
 {
 	// Configure container
-	"name": "ROS2-Application",
+	"name": "AuNa",
 	"build": {
 		"context": "..",
 		"dockerfile": "Dockerfile",
-		"args": { "VARIANT": "jammy" }
+		"args": {
+			"VARIANT": "jammy",
+			"INSTALL_ROS2": "true",
+			"INSTALL_GAZEBO": "true",
+			"INSTALL_ROS2_TRACING": "true"
+		}
 	},
 
 	// Configure container user
@@ -16,9 +21,7 @@
 	"workspaceFolder": "/home/vscode/workspace",
 
 	// Configure runtime settings
-	"runArgs": [
-		"--network=host"
-	],
+	"runArgs": ["--network=host", "-e", "DISPLAY"],
 
 	// Configure VS Code extensions
 	"customizations": {
