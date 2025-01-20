@@ -1,5 +1,5 @@
-ARG VARIANT=ubuntu-22.04
-FROM mcr.microsoft.com/devcontainers/base:ubuntu-${VARIANT}
+ARG VARIANT
+FROM mcr.microsoft.com/devcontainers/base:${VARIANT}
 
 # --- Configure environment ---
 
@@ -21,8 +21,7 @@ RUN if [ "$INSTALL_ROS2" = "true" ]; then \
     curl -sSL https://raw.githubusercontent.com/ros/rosdistro/master/ros.key -o /usr/share/keyrings/ros-archive-keyring.gpg && \
     echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/ros-archive-keyring.gpg] http://packages.ros.org/ros2/ubuntu $(. /etc/os-release && echo $UBUNTU_CODENAME) main" | tee /etc/apt/sources.list.d/ros2.list > /dev/null && \
     apt-get update && \
-    apt-get install -y ros-humble-desktop && \
-    apt-get -y install python3-pip python3-colcon-common-extensions ros-dev-tools; \
+    apt-get install -y ros-humble-desktop libgeographic-dev python3-pip python3-colcon-common-extensions ros-dev-tools; \
     fi
 
 # --- Install Gazebo ---
@@ -32,7 +31,8 @@ RUN if [ "$INSTALL_GAZEBO" = "true" ]; then \
     wget https://packages.osrfoundation.org/gazebo.key -O - | apt-key add - && \
     apt-get update && \
     apt-get install -y gazebo && \
-    apt-get install -y ros-humble-gazebo-ros-pkgs; \
+    apt-get install -y ros-humble-gazebo-ros-pkgs && \
+    apt-get install -y ros-humble-gazebo-ros; \
     fi
 
 # Expose the Gazebo port
@@ -58,27 +58,43 @@ RUN if [ "$INSTALL_ROS2_TRACING" = "true" ]; then \
 
 # --- Install ROS 2 Extensions ---
 
-ARG INSTALL_ROS2=true
 RUN if [ "$INSTALL_ROS2" = "true" ]; then \
     apt-get update && \
     apt-get install -y ros-humble-rmw-cyclonedds-cpp; \
     fi
 
 # --- Install DevTools ---
-
 RUN apt-get update && \
-    apt-get -y install clangd clang-format clang-tidy cppcheck && \
+    apt-get -y install \
+    clangd \
+    clang \
+    clang-format \
+    clang-tidy \
+    cppcheck \
+    build-essential \
+    cmake \
+    libc++-dev \
+    libstdc++-12-dev \
+    libc++abi-dev && \
     pip install pep8 pylint
+
+# # --- Install additional ROS2 packages ---
+RUN if [ "$INSTALL_ROS2" = "true" ]; then \
+    apt-get install -y ros-humble-xacro ros-humble-udp-msgs libunwind-dev ros-humble-navigation2 ros-humble-nav2-bringup ros-humble-etsi-its-* ros-humble-gazebo-msgs; \
+    fi
 
 # --- Set up user ---
 
 # set user
+RUN usermod -a -G dialout vscode
 USER vscode
 
-# source ROS2 setup file
+# source ROS2 setup file and workspace
+ARG WORKSPACE
 RUN if [ "$INSTALL_ROS2" = "true" ]; then \
-    echo '. /opt/ros/humble/setup.sh' >> /home/vscode/.bashrc; \
-    RMW_IMPLEMENTATION=rmw_cyclonedds_cpp; \
+    echo '. /opt/ros/humble/setup.sh' >> /home/vscode/.bashrc && \
+    echo "if [ -f ~/workspace/packages/install/setup.bash ]; then source ~/workspace/packages/install/setup.bash; fi" >> /home/vscode/.bashrc && \
+    RMW_IMPLEMENTATION=rmw_cyclonedds_cpp && \
     CYCLONEDDS_URI=/home/vscode/workspace/cyclone_dds_config.xml; \
     fi
 
@@ -88,6 +104,9 @@ RUN if [ "$INSTALL_ROS2_TRACING" = "true" ]; then \
     fi
 
 # configure environment variables
+ARG DISPLAY
+ARG ROS_LOCALHOST_ONLY
+ARG ROS_DOMAIN_ID
 ENV DISPLAY=${DISPLAY}
 ENV ROS_LOCALHOST_ONLY=${ROS_LOCALHOST_ONLY:-0}
 ENV ROS_DOMAIN_ID=${ROS_DOMAIN_ID:-0}

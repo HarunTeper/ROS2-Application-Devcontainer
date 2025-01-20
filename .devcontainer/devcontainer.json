@@ -1,7 +1,7 @@
 // For format details, see https://aka.ms/devcontainer.json.
 {
 	// Configure container
-	"name": "AuNa",
+	"name": "ROS2-Application",
 	"build": {
 		"context": "..",
 		"dockerfile": "Dockerfile",
@@ -11,20 +11,24 @@
 			"INSTALL_GAZEBO": "true",
 			"INSTALL_ROS2_TRACING": "true",
 			"ROS_DOMAIN_ID": "0",
-			"ROS_LOCALHOST_ONLY": "0"
+			"ROS_LOCALHOST_ONLY": "0",
+			"DISPLAY": "${localEnv:DISPLAY}"
 		}
 	},
-
 	// Configure container user
 	"remoteUser": "vscode",
-
 	// Configure workspace mount point
 	"workspaceMount": "source=${localWorkspaceFolder},target=/home/vscode/workspace,type=bind,consistency=cached",
 	"workspaceFolder": "/home/vscode/workspace",
-
 	// Configure runtime settings
-	"runArgs": ["--network=host", "-e", "DISPLAY"],
-
+	"runArgs": [
+		"--privileged",
+		"--network=host"
+	],
+	"mounts": [
+		"source=/dev,target=/dev,type=bind",
+		"source=/tmp/.X11-unix,target=/tmp/.X11-unix,type=bind"
+	],
 	// Configure VS Code extensions
 	"customizations": {
 		"vscode": {
@@ -36,7 +40,9 @@
 				"donjayamanne.python-extension-pack",
 				"donjayamanne.python-environment-manager",
 				"ms-azuretools.vscode-docker",
-				"ms-python.autopep8"
+				"ms-python.autopep8",
+				"GitHub.copilot",
+				"GitHub.copilot-chat"
 			]
 		}
 	}
